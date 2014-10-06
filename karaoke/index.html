@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Daydream Believer</title>
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+<h1 id="title">Daydream Believer</h1>
+
+<video src="http://www.cs.tufts.edu/comp/20/daydream_believer.webm" id="music_video" controls></video>
+<div id="lyrics"></div>
+
+<script>
+    function change_lyrics() {
+        var v = document.getElementById("music_video");
+        var lyr = document.getElementById("lyrics");
+        if (v.currentTime > 5 && v.currentTime < 38) {
+            lyr.innerHTML = "<p>Oh, I could hide 'neath the wings<br/>Of the bluebird as she sings.<br/>The six o'clock alarm would never ring.<br/>But it rings and I rise,<br/>Wipe the sleep out of my eyes.<br/>My shavin' razor's cold and it stings.</p>";
+        } else if (v.currentTime > 38 && v.currentTime < 55) {
+            lyr.innerHTML = "<p>Cheer up, Sleepy Jean.<br/>Oh, what can it mean.</br>To a daydream believer<br/>And a homecoming queen.</p>";
+        } else if (v.currentTime > 55 && v.currentTime < 85) {
+            lyr.innerHTML = "<p>You once thought of me<br/>As a white knight on a steed.<br/>Now you know how happy I can be.<br/>Oh, and our good times start and end<br/>Without dollar one to spend.<br/>But how much, baby, do we really need.<br/><img src='images/knight.jpg' alt='cartoon knight'/></p>";
+        } else if (v.currentTime > 85 && v.currentTime < 120) {
+            lyr.innerHTML = "<p>Cheer up, Sleepy Jean.<br/>Oh, what can it mean.<br/>To a daydream believer<br/>And a homecoming queen.<br/>Cheer up, Sleepy Jean.<br/>Oh, what can it mean.<br/>To a daydream believer<br/>And a homecoming queen.</p>";
+        } else if (v.currentTime > 120 && v.currentTime < 127) {
+            lyr.innerHTML = "<p>[Instrumental interlude]<br/><img src='images/music.jpg' alt='music notes'/></p>";
+        } else if (v.currentTime > 127 && v.currentTime < 165) {
+            lyr.innerHTML = "<p>Cheer up, Sleepy Jean.<br/>Oh, what can it mean.<br/>To a daydream believer<br/>And a homecoming queen.<br/>[Repeat and fade]</p>";
+        } else if (v.currentTime > 165) {
+            lyr.innerHTML = "<p></p>";
+        }
+    }
+
+    var video = document.getElementById("music_video");
+    video.addEventListener("timeupdate", change_lyrics, false);
+</script>
+</body>
+</html> 

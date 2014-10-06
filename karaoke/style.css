@@ -1,0 +1,14 @@
+body {
+    text-align: right;
+    background-color: #E6E6E6;
+}
+
+#title {
+    font-family: "Arial Black";
+    color: #00005C;
+}
+
+#lyrics {
+    font-family: "Helvetica";
+    color: #00008A;
+}
