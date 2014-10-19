@@ -12,6 +12,7 @@ var map;
 var lat;
 var lng;
 var chars;
+var infowindow = new google.maps.InfoWindow();
 /* SEND MY LOCATION */
         function initialize() {
         navigator.geolocation.getCurrentPosition(function(position) {
@@ -38,24 +39,27 @@ var chars;
 //                         var txt = document.getElementById("distances");
                         chars = JSON.parse(xhr.responseText);
 //                         txt.innerHTML = chars;
-                        printChars(chars);
+                        printChars(chars, lat, lng);
                 }
         }
         xhr.send("login=HannahAbbott&lat=" + lat + "&lng=" + lng);
     }
     
-    function printChars(chars) {
+    function printChars(chars, lat, lng) {
         var txt = document.getElementById("distances");
         for (i = 0; chars['characters'][i]; i++) {
-            txt.innerHTML = txt.innerHTML + "<p>" + chars['characters'][i]['name'] + "<br/>" + 
-                  chars['characters'][i]['loc']['latitude'] + " " + 
-                  chars['characters'][i]['loc']['longitude'] + "<br/>" + 
-                  chars['characters'][i]['loc']['note'] + "</p>";
+            createCharMarker(chars, i);
+            createPolyline(chars, i, lat, lng);
+//             txt.innerHTML = txt.innerHTML + "<p>" + chars['characters'][i]['name'] + "<br/>" + 
+//                   chars['characters'][i]['loc']['latitude'] + " " + 
+//                   chars['characters'][i]['loc']['longitude'] + "<br/>" + 
+//                   chars['characters'][i]['loc']['note'] + "</p>";
         }
         for (i = 1; chars['students'][i]; i++) {
-            txt.innerHTML = txt.innerHTML + "<p>" + chars['students'][i]['login'] + "<br/>" + 
-                  chars['students'][i]['lat'] + "<br/>" + chars['students'][i]['lng'] + "<br/>" + 
-                  chars['students'][i]['created_at'] + "</p>";
+            createStudentMarker(chars, i);
+//             txt.innerHTML = txt.innerHTML + "<p>" + chars['students'][i]['login'] + "<br/>" + 
+//                   chars['students'][i]['lat'] + "<br/>" + chars['students'][i]['lng'] + "<br/>" + 
+//                   chars['students'][i]['created_at'] + "</p>";
         }
         createPersonalMarker(chars);
         calculateDistances(chars);
@@ -64,18 +68,86 @@ var chars;
     function createPersonalMarker(chars)
     {
         var me = new google.maps.LatLng(chars['students'][0]['lat'], chars['students'][0]['lng']);
+        var image = "http://placepuppy.it/50/50";
         var marker = new google.maps.Marker({
             position: me,
-            title: "Me"
+            title: "Me",
+            icon: image
         });
-        var infowindow = new google.maps.InfoWindow();
-        
         marker.setMap(map);
         
         google.maps.event.addListener(marker, 'click', function() {
             infowindow.setContent(marker.title);
             infowindow.open(map, marker);
         });
+    }
+    
+    function createStudentMarker(chars, i)
+    {
+        var me = new google.maps.LatLng(chars['students'][i]['lat'], chars['students'][i]['lng']);
+        var info = chars['students'][i]['login'] + ", " + chars['students'][i]['lat'] + ", " + 
+                    chars['students'][i]['lng'] + ", " + chars['students'][i]['created_at'];
+        var marker = new google.maps.Marker({
+            position: me,
+            title: info
+        });
+        marker.setMap(map);
+        
+        google.maps.event.addListener(marker, 'click', function() {
+            infowindow.setContent(marker.title);
+            infowindow.open(map, marker);
+        });
+    }
+    
+    function createCharMarker(chars, i)
+    {
+        var me = new google.maps.LatLng(chars['characters'][i]['loc']['latitude'], chars['characters'][i]['loc']['longitude']);
+        var info = chars['characters'][i]['name'] + ", " + chars['characters'][i]['loc']['latitude'] + ", " + 
+                    chars['characters'][i]['loc']['longitude'] + ", " + chars['characters'][i]['loc']['note'];
+        var image;
+        
+        if (chars['characters'][i]['name'] == "carmen") {
+            image = "http://tuftsdev.github.io/WebProgramming/images/carmen.png";
+        } else if (chars['characters'][i]['name'] == "nr") {
+            image = "http://tuftsdev.github.io/WebProgramming/images/nr.png";
+        } else if (chars['characters'][i]['name'] == "waldo") {
+            image = "http://tuftsdev.github.io/WebProgramming/images/waldo.png";
+        } else if (chars['characters'][i]['name'] == "snape") {
+            image = "http://tuftsdev.github.io/WebProgramming/images/snape.png";
+        } else if (chars['characters'][i]['name'] == "hescott") {
+            image = "http://tuftsdev.github.io/WebProgramming/images/hescott.png";
+        } else if (chars['characters'][i]['name'] == "batman") {
+            image = "http://tuftsdev.github.io/WebProgramming/images/batman.png";
+        }
+        
+        var marker = new google.maps.Marker({
+            position: me,
+            title: info,
+            icon: image
+        });
+        marker.setMap(map);
+        
+        google.maps.event.addListener(marker, 'click', function() {
+            infowindow.setContent(marker.title);
+            infowindow.open(map, marker);
+        });
+    }
+    
+    function createPolyline(chars, i, lat, lng)
+    {
+        var coords = [
+            new google.maps.LatLng(lat, lng),
+            new google.maps.LatLng(chars['characters'][i]['loc']['latitude'], chars['characters'][i]['loc']['longitude'])
+        ];
+        var line = new google.maps.Polyline({
+            path: coords,
+            geodesic: true,
+            strokeColor: "#FF0000",
+            strokeOpacity: 1.0,
+            strokeWeight: 2
+        
+        });
+        line.setMap(map);
     }
     
     // source: http://stackoverflow.com/questions/14560999/using-the-haversine-formula-in-javascript
@@ -105,7 +177,7 @@ var chars;
             var d = R * c; 
             
             distances[i] = [ d * 0.62137, chars['characters'][i]['name'] ];
-            console.log(d);
+//             console.log(d);
         }
         printDistance(distances);
     }
@@ -113,17 +185,12 @@ var chars;
     function printDistance(distances)
     {
         var txt = document.getElementById("distances");
-        for (i = 0; distances[i]; i++) {
-            txt.innerHTML = txt.innerHTML + "<p>" +  "The distance between me and " + distances[i][1] + " is: " 
-                + distances[i][0] + " miles.</p>";
-        }
         distances = sortFnc(distances);
         
         for (i = 0; distances[i]; i++) {
             txt.innerHTML = txt.innerHTML + "<p>" +  "The distance between me and " + distances[i][1] + " is: " 
                 + distances[i][0] + " miles.</p>";
         }
-            
     }
     
     function sortFnc(distances) {
