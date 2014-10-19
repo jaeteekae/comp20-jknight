@@ -86,7 +86,8 @@ var chars;
         }
 
         var lat2 = chars['students'][0]['lat']; 
-        var lon2 = chars['students'][0]['lng']; 
+        var lon2 = chars['students'][0]['lng'];
+        var distances = new Object;
         
         for (i = 0; chars['characters'][i]; i++) {
             var lat1 = chars['characters'][i]['loc']['latitude']; 
@@ -103,18 +104,50 @@ var chars;
             var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
             var d = R * c; 
             
-            printDistance(chars['characters'][i]['name'], d);
+            distances[i] = [ d * 0.62137, chars['characters'][i]['name'] ];
             console.log(d);
         }
+        printDistance(distances);
     }
     
-    function printDistance(charName, d)
+    function printDistance(distances)
     {
         var txt = document.getElementById("distances");
-        txt.innerHTML = txt.innerHTML + "<p>" +  "The distance between me and " + charName + " is: " 
-            + (d * 0.62137) + " miles.</p>";
+        for (i = 0; distances[i]; i++) {
+            txt.innerHTML = txt.innerHTML + "<p>" +  "The distance between me and " + distances[i][1] + " is: " 
+                + distances[i][0] + " miles.</p>";
+        }
+        distances = sortFnc(distances);
+        
+        for (i = 0; distances[i]; i++) {
+            txt.innerHTML = txt.innerHTML + "<p>" +  "The distance between me and " + distances[i][1] + " is: " 
+                + distances[i][0] + " miles.</p>";
+        }
             
     }
+    
+    function sortFnc(distances) {
+        var min;
+        var lowest;
+        var temp;
+        for (i = 0; distances[i]; i++) {
+            min = distances[i];
+            temp = min;
+            lowest = i;
+            for (j = i+1; distances[j]; j++) { //find min from i on
+            if (distances[j][0] < min[0]) {
+                min = distances[j];
+                lowest = j;
+            }
+            }
+            
+            // swap the value in i with the lowest value from i on
+            distances[i] = min;
+            distances[lowest] = temp;
+        }
+        return distances;
+    }
+    
     google.maps.event.addDomListener(window, "load", initialize);
     
 </script>
