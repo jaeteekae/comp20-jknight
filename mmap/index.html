@@ -49,7 +49,7 @@ var infowindow = new google.maps.InfoWindow();
             createCharMarker(chars, i);
             createPolyline(chars, i, lat, lng);
         }
-        for (i = 1; chars['students'][i]; i++) {
+        for (i = 0; chars['students'][i]; i++) {
             createStudentMarker(chars, i);
         }
         createPersonalMarker(lat, lng);
