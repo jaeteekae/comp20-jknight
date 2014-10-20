@@ -52,13 +52,13 @@ var infowindow = new google.maps.InfoWindow();
         for (i = 1; chars['students'][i]; i++) {
             createStudentMarker(chars, i);
         }
-        createPersonalMarker(chars);
+        createPersonalMarker(lat, lng);
         calculateDistances(chars);
     }
     
-    function createPersonalMarker(chars)
+    function createPersonalMarker(lat, lng)
     {
-        var me = new google.maps.LatLng(chars['students'][0]['lat'], chars['students'][0]['lng']);
+        var me = new google.maps.LatLng(lat, lng);
         var image = "images/togepi.gif";
         var marker = new google.maps.Marker({
             position: me,
