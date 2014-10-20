@@ -13,20 +13,22 @@ var lat;
 var lng;
 var chars;
 var infowindow = new google.maps.InfoWindow();
-/* SEND MY LOCATION */
-        function initialize() {
-        navigator.geolocation.getCurrentPosition(function(position) {
-            lat = position.coords.latitude;
-            lng = position.coords.longitude;
-        
-            var mapOptions = {
-                center: { lat: position.coords.latitude, lng: position.coords.longitude},
-                zoom: 13
-            };
-            getData(lat, lng);
-            map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions)
-            });
+
+    function initialize() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                lat = position.coords.latitude;
+                lng = position.coords.longitude;
+            
+                var mapOptions = {
+                    center: { lat: position.coords.latitude, lng: position.coords.longitude},
+                    zoom: 13
+                };
+                getData(lat, lng);
+                map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions)
+                });
         }
+    }
         
         
     function getData(lat, lng) {
@@ -34,32 +36,21 @@ var infowindow = new google.maps.InfoWindow();
         xhr.open("post", "http://chickenofthesea.herokuapp.com/sendLocation", true);
         xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
         xhr.onreadystatechange = function() {
-                if (xhr.readyState == 4) {
-//                         console.log(xhr.responseText);
-//                         var txt = document.getElementById("distances");
+                if (xhr.readyState == 4 && xhr.status == 200) {
                         chars = JSON.parse(xhr.responseText);
-//                         txt.innerHTML = chars;
-                        printChars(chars, lat, lng);
+                        parseData(chars, lat, lng);
                 }
         }
         xhr.send("login=HannahAbbott&lat=" + lat + "&lng=" + lng);
     }
     
-    function printChars(chars, lat, lng) {
-        var txt = document.getElementById("distances");
+    function parseData(chars, lat, lng) {
         for (i = 0; chars['characters'][i]; i++) {
             createCharMarker(chars, i);
             createPolyline(chars, i, lat, lng);
-//             txt.innerHTML = txt.innerHTML + "<p>" + chars['characters'][i]['name'] + "<br/>" + 
-//                   chars['characters'][i]['loc']['latitude'] + " " + 
-//                   chars['characters'][i]['loc']['longitude'] + "<br/>" + 
-//                   chars['characters'][i]['loc']['note'] + "</p>";
         }
         for (i = 1; chars['students'][i]; i++) {
             createStudentMarker(chars, i);
-//             txt.innerHTML = txt.innerHTML + "<p>" + chars['students'][i]['login'] + "<br/>" + 
-//                   chars['students'][i]['lat'] + "<br/>" + chars['students'][i]['lng'] + "<br/>" + 
-//                   chars['students'][i]['created_at'] + "</p>";
         }
         createPersonalMarker(chars);
         calculateDistances(chars);
@@ -68,7 +59,7 @@ var infowindow = new google.maps.InfoWindow();
     function createPersonalMarker(chars)
     {
         var me = new google.maps.LatLng(chars['students'][0]['lat'], chars['students'][0]['lng']);
-        var image = "http://placepuppy.it/50/50";
+        var image = "images/dog.jpg";
         var marker = new google.maps.Marker({
             position: me,
             title: "Me",
@@ -85,11 +76,13 @@ var infowindow = new google.maps.InfoWindow();
     function createStudentMarker(chars, i)
     {
         var me = new google.maps.LatLng(chars['students'][i]['lat'], chars['students'][i]['lng']);
+        var image = "images/kitten.jpeg"
         var info = chars['students'][i]['login'] + ", " + chars['students'][i]['lat'] + ", " + 
                     chars['students'][i]['lng'] + ", " + chars['students'][i]['created_at'];
         var marker = new google.maps.Marker({
             position: me,
-            title: info
+            title: info,
+            icon: image
         });
         marker.setMap(map);
         
@@ -107,17 +100,17 @@ var infowindow = new google.maps.InfoWindow();
         var image;
         
         if (chars['characters'][i]['name'] == "carmen") {
-            image = "http://tuftsdev.github.io/WebProgramming/images/carmen.png";
+            image = "images/carmen.png";
         } else if (chars['characters'][i]['name'] == "nr") {
-            image = "http://tuftsdev.github.io/WebProgramming/images/nr.png";
+            image = "images/nr.png";
         } else if (chars['characters'][i]['name'] == "waldo") {
-            image = "http://tuftsdev.github.io/WebProgramming/images/waldo.png";
+            image = "images/waldo.png";
         } else if (chars['characters'][i]['name'] == "snape") {
-            image = "http://tuftsdev.github.io/WebProgramming/images/snape.png";
+            image = "images/snape.png";
         } else if (chars['characters'][i]['name'] == "hescott") {
-            image = "http://tuftsdev.github.io/WebProgramming/images/hescott.png";
-        } else if (chars['characters'][i]['name'] == "batman") {
-            image = "http://tuftsdev.github.io/WebProgramming/images/batman.png";
+            image = "images/hescott.png";
+        } else {
+            image = "images/batman.png";
         }
         
         var marker = new google.maps.Marker({
@@ -177,7 +170,6 @@ var infowindow = new google.maps.InfoWindow();
             var d = R * c; 
             
             distances[i] = [ d * 0.62137, chars['characters'][i]['name'] ];
-//             console.log(d);
         }
         printDistance(distances);
     }
@@ -201,14 +193,12 @@ var infowindow = new google.maps.InfoWindow();
             min = distances[i];
             temp = min;
             lowest = i;
-            for (j = i+1; distances[j]; j++) { //find min from i on
-            if (distances[j][0] < min[0]) {
-                min = distances[j];
-                lowest = j;
+            for (j = i+1; distances[j]; j++) { 
+                if (distances[j][0] < min[0]) {
+                  min = distances[j];
+                  lowest = j;
+                }
             }
-            }
-            
-            // swap the value in i with the lowest value from i on
             distances[i] = min;
             distances[lowest] = temp;
         }
