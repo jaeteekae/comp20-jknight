@@ -33,7 +33,8 @@ var infowindow = new google.maps.InfoWindow();
         
     function getData(lat, lng) {
         xhr = new XMLHttpRequest();
-        xhr.open("post", "http://chickenofthesea.herokuapp.com/sendLocation", true);
+        // xhr.open("post", "http://chickenofthesea.herokuapp.com/sendLocation", true);
+        xhr.open("post", "https://agile-harbor-1924.herokuapp.com/sendLocation", true);
         xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
         xhr.onreadystatechange = function() {
                 if (xhr.readyState == 4 && xhr.status == 200) {
