@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Security Assessment</title>
+<link rel="stylesheet" href="style.css" type="text/css" />
+</head>
+
+<body>
+
+<h3>Introduction</h3>
+<p>
+    The product being assessed is the "Where in the world" server created by Gabby Cella. The server has 4 API's:
+</p>
+    <ol>
+        <li>Sending a login, latitude, and longitude to be stored in a database</li>
+        <li>Getting all of the check-ins of a given login as JSON</li>
+        <li>A homepage that shows the login, latitude, longitude, and time stamp of each check-in</li>
+        <li>Getting a JSON string of the current schedule for the red line train</li>
+    </ol>
+<p>
+    I was hired to assess the security of the server. Through accessing the API's, I was able to make the server function in a way that went against the intended functionality and hurt the experience of any client using the server. I recorded the successful attacks that I made and will provide suggestions for improving the server's security.
+</p>
+
+<h3>Methodology</h3>
+<p>
+    I began testing the application through "black box" testing. Before I read the source code, I reviewed the documented functionality of each API and hypothesized ways that I might break the app.
+    <br/>In my second round of testing, I analyzed the source code of the application. I picked out specific weaknesses in the code and exploited them through my use of the API's.
+    <br/>The only tools that I used were a plain HTML page and the curl command in the terminal. The HTML page accessed the POST API of the server.
+</p>
+
+<h3>Abstract of Findings</h3>
+<p>
+    I found 4 security issues that impaired the functionality of the application. When considering the database that holds the information from each check-in, it is possible to send incorrect and incomplete check-ins that still get successfully added to the database. It is also possible to send a check-in such that when a client accesses the application's homepage, they are harassed by pop-ups that were created by the check-in creator and not the application creator. With the API that is supposed to return only the check-ins from one login, it is possible to retrieve all of the check-ins that have been stored. Considering it as a whole, the application can be used by anyone with the application's URL. Use of the application is unrestricted.
+</p>
+
+<h3>Issues Found</h3>
+<ol>
+    <li>Bad database insertions
+        <ul>
+        <li>Found using the sendLocation POST API.</li>
+        <li>The severity of the issue is low. If the data inserted into the database is not verified closely enough, the validity API is questionable. However, the application still performs.</li>
+        <li>The issue is that the sendLocation API inserts a check-in into the database without checking if the latitude or longitude are "NaN", or not a number. The latitude and longitude are parsed with:<br/>
+            <code>var lat = parseFloat(request.body.lat); var lng = parseFloat(request.body.lng);</code>
+            <br/>before checking for undefined entries:<br/>
+            <code>if (login == undefined || lat == undefined || lng == undefined) { response.send(400); }</code>
+            <br/>So if the latitude or longitude is undefined, it becomes NaN before it is checked as undefined. Any check-in with a missing or non-numerical latitude or longitude are still inserted into the database.</li>
+        <li><img src="images/db.png" alt="proof for db insertion"/></li>
+        <li>This issue could simply be resolved by checking for:<br/>
+            <code>if (login == undefined || lat == NaN || lng == NaN) { response.send(400); }</code></li>
+    </ul>
+    </li>
+    <li>Cross site scripting
+        <ul>
+        <li>The vulnerability is exploited with the sendLocation POST API, but the scripting shows up on the application's homepage.</li>
+        <li>The severity of the issue is high. The homepage is left completely open to however an attacker might want to use it. There could be added scripting for redirecting the page or modifying it in any way.</li>
+        <li>The issue is that the client is able to send and insert Javascript into the database through the login field of the POST request. The check-in gets successfully added to the database, and the script gets displayed and runs whenever someone accesses the application homepage. This vulnerability exists because the check-in is inserted without checking for cross site scripting, and the index page just inserts the login into the html.</li>
+        <li><img src="images/xss.png" alt="proof for xss"/></li>
+        <li>The problem could be avoided if the login is checked for cross site scripting before it is entered into the database. Every login could be turned into a string and used with the code:<br/>
+            <code>login = login.replace(/\&lt;|\>|\"|\'|\%|\;|\(|\)|\&amp;|\+|\-/g,""); </code>
+            <br/>to remove potentially problematic characters from the login. If the logins were restricted to alphabetical characters only, then this would not affect the logins from any legitimate check-ins.</li>
+    </ul>
+    </li>
+    <li>Incorrect Mongo queries
+        <ul>
+        <li>Found using the locations.json API.</li>
+        <li>The severity of the issue is high. It poses a huge confidentiality risk to anyone who submits a check-in.</li>
+        <li>The application uses mongoDB for storing the check-in information, and the mongo query for this API is:<br/>
+            <code>collection.find({login:login})</code>
+            <br/>For a mongo query, a $ne searches for all values that do not equal the given value. Using this with the locations.json API returns every single check-in in the database. This allows anyone to access the logins and locations of anyone who submitted a check-in.</li>
+        <li><img src="images/ne.png" alt="mongo proof"/></li>
+        <li>This can be fixed by checking the request before actually querying the mongo database. Like for the last problem, this code:<br/>
+            <code>login = login.replace($,"");</code>
+            <br/>will remove any "$" characters from the login.</li>
+    </ul>
+    </li>
+    <li>Unlimited cross origin resource sharing
+        <ul>
+        <li>Found in the sendLocation API.</li>
+        <li>The severity of the issue is low. The usage of the application is low right now, but an increase in usage could overwhelm the app.</li>
+        <li>This API has cross origin resource sharing enabled universally. This is the problematic line in the code:<br/>
+            <code>response.header("Access-Control-Allow-Origin", "*");</code>
+            <br/>The other screenshots prove that the problem exists, since I was able to access the API from a different origin than the application. Since anyone is able to access this API, it opens the application up for misuse by any user without restriction.</li>
+            <li>This problem could be prevented by whitelisting any domain that is allowed to use the API. This could be achieved by keeping a list of approved domains. When the API is used by domain x, it should search the approved list for x. If x is found in the list, then CORS should be enabled for that domain with:<br/>
+                <code>response.header("Access-Control-Allow-Origin", x);</code></li>
+    </ul>
+    </li>
+</ol>
+
+<h3>Conclusion</h3>
+<p>
+    Many of the security issues with the application are due to a lack of checking the data that is sent by the client. I'm sure that there are more problems than the ones I have listed here, so any of the client's data should be thoroughly checked and limited before being used in any way by any API. In general, trusting anything from the client is a huge security risk, so making those changes would greatly improve the security of the application.
+    <br/>Recommended Cost: $1500
+</p>
+
+</body>
+</html> 
